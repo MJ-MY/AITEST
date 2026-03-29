@@ -23,8 +23,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-CN">
-      <body className={`${geistSans.variable} ${geistMono.variable} min-h-screen font-sans antialiased`}>
+    <html lang="zh-CN" className="h-dvh overflow-hidden">
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} h-dvh min-h-0 overflow-hidden font-sans antialiased`}
+      >
         {children}
       </body>
     </html>

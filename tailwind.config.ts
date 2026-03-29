@@ -10,6 +10,13 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      /** 底部输入区高度：11.25rem = 180px（根字号 16px） */
+      height: {
+        chat: "11.25rem",
+      },
+      maxHeight: {
+        chat: "11.25rem",
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

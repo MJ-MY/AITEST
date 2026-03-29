@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Bot, Loader2, Paperclip, Send, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuthModal } from "@/contexts/auth-modal-context";
 import { CHAT_MODEL } from "@/lib/chat-model";
@@ -147,9 +146,13 @@ export function ChatApp() {
   };
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
-      <ScrollArea className="flex-1 px-4 py-6">
-        <div className="mx-auto max-w-3xl space-y-4 pb-24">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div
+        className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-6"
+        role="log"
+        aria-label="对话内容"
+      >
+        <div className="mx-auto max-w-3xl space-y-4 pb-4">
           {!active || active.messages.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-border bg-card/50 p-8 text-center text-muted-foreground">
               <Bot className="mx-auto mb-3 h-10 w-10 text-primary/80" />
@@ -190,20 +193,20 @@ export function ChatApp() {
           {sendError ? <p className="text-center text-sm text-destructive">{sendError}</p> : null}
           <div ref={bottomRef} />
         </div>
-      </ScrollArea>
+      </div>
 
-      <div className="shrink-0 border-t border-border bg-card/80 px-4 pb-6 pt-3 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+      <div className="shrink-0 border-t border-border bg-card/80 px-4 pb-3 pt-2 backdrop-blur supports-[backdrop-filter]:bg-card/60">
         <div className="mx-auto max-w-3xl">
-          <div className="rounded-2xl border-2 border-primary/30 bg-background p-3 shadow-sm">
+          <div className="flex h-chat max-h-chat flex-col overflow-hidden rounded-2xl border-2 border-primary/30 bg-background p-2 shadow-sm">
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={onKeyDown}
               placeholder="输入消息，Enter 发送，Shift+Enter 换行"
               disabled={!sessionReady || sending}
-              className="min-h-[100px] resize-none border-0 bg-transparent p-0 text-base focus-visible:ring-0"
+              className="min-h-0 flex-1 resize-none overflow-y-auto border-0 bg-transparent px-0.5 py-1 text-sm leading-relaxed focus-visible:ring-0 sm:text-base"
             />
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-3">
+            <div className="mt-1 flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-2">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex h-9 items-center rounded-full border border-border bg-muted/40 px-3 text-xs text-muted-foreground">
                   {CHAT_MODEL}

@@ -25,11 +25,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthModalProvider value={authCtx}>
-      <div className="flex min-h-screen bg-[hsl(var(--background))]">
+      <div className="flex h-dvh min-h-0 overflow-hidden bg-[hsl(var(--background))]">
         <AppSidebar mobileOpen={mobileOpen} onMobileOpenChange={setMobileOpen} />
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <AppHeader />
-          <div className="flex flex-1 flex-col overflow-hidden">{children}</div>
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
         </div>
       </div>
       <LoginDialog
