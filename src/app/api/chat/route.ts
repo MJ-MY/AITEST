@@ -131,20 +131,20 @@ export async function POST(req: Request) {
     );
   }
 
-  let body: { messages: { role: string; content: string }[]; model?: string; deepThinking?: boolean };
+  let body: { messages: { role: string; content: string }[]; model?: string };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "无效的请求体" }, { status: 400 });
   }
 
-  const { messages, model, deepThinking } = body;
+  const { messages, model } = body;
   if (!messages?.length) {
     return NextResponse.json({ error: "messages 不能为空" }, { status: 400 });
   }
 
   const modelId = model ?? CHAT_MODEL;
-  const systemContent = buildChatSystemPrompt(modelId, Boolean(deepThinking));
+  const systemContent = buildChatSystemPrompt(modelId);
 
   const fullMessages: ChatMessage[] = [
     { role: "system", content: systemContent },

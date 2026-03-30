@@ -1,5 +1,5 @@
-import { PlaceholderPage } from "@/components/app-shell/placeholder-page";
+import { ImageGenPage } from "@/components/image-gen-page";
 
 export default function ImagePage() {
-  return <PlaceholderPage title="AI 配图" />;
+  return <ImageGenPage />;
 }

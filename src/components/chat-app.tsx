@@ -16,8 +16,6 @@ export function ChatApp() {
   const addOrCreateUserMessage = useAppStore((s) => s.addOrCreateUserMessage);
   const addAssistantMessage = useAppStore((s) => s.addAssistantMessage);
   const getActiveConversation = useAppStore((s) => s.getActiveConversation);
-  const deepThinking = useAppStore((s) => s.deepThinking);
-  const setDeepThinking = useAppStore((s) => s.setDeepThinking);
 
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -75,7 +73,6 @@ export function ChatApp() {
         body: JSON.stringify({
           messages: msgs,
           model: CHAT_MODEL,
-          deepThinking,
         }),
         signal: abort.signal,
       });
@@ -211,15 +208,6 @@ export function ChatApp() {
                 <span className="inline-flex h-9 items-center rounded-full border border-border bg-muted/40 px-3 text-xs text-muted-foreground">
                   {CHAT_MODEL}
                 </span>
-                <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
-                  <input
-                    type="checkbox"
-                    checked={hasMounted && deepThinking}
-                    onChange={(e) => setDeepThinking(e.target.checked)}
-                    className="accent-primary"
-                  />
-                  深度思考
-                </label>
               </div>
               <div className="flex items-center gap-1">
                 <Button variant="ghost" size="icon" className="text-muted-foreground" type="button">

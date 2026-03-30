@@ -16,12 +16,10 @@ type AppState = {
   isLoggedIn: boolean;
   conversations: Conversation[];
   activeConversationId: string | null;
-  deepThinking: boolean;
   login: (username: string, password: string) => boolean;
   logout: () => void;
   startNewChat: () => void;
   setActiveConversation: (id: string | null) => void;
-  setDeepThinking: (value: boolean) => void;
   addOrCreateUserMessage: (activeId: string | null, content: string) => string;
   addAssistantMessage: (conversationId: string, content: string) => void;
   deleteConversation: (id: string) => void;
@@ -40,7 +38,6 @@ export const useAppStore = create<AppState>()(
       isLoggedIn: false,
       conversations: [],
       activeConversationId: null,
-      deepThinking: false,
 
       login: (username, password) => {
         if (username === "admin" && password === "admin123") {
@@ -61,8 +58,6 @@ export const useAppStore = create<AppState>()(
       setActiveConversation: (id) => {
         set({ activeConversationId: id });
       },
-
-      setDeepThinking: (value) => set({ deepThinking: value }),
 
       addOrCreateUserMessage: (activeId, content) => {
         const userMsg: ChatMessage = { id: uuidv4(), role: "user", content };
@@ -125,7 +120,6 @@ export const useAppStore = create<AppState>()(
         isLoggedIn: state.isLoggedIn,
         conversations: state.conversations,
         activeConversationId: state.activeConversationId,
-        deepThinking: state.deepThinking,
       }),
     },
   ),
