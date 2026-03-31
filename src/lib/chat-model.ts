@@ -13,3 +13,17 @@ export function buildChatSystemPrompt(modelId: string): string {
   const identity = `你是由 ${PROVIDER}（${PROVIDER_CN}）大模型驱动的中文助手「${ASSISTANT}」。当前请求使用的模型 ID 为「${modelId}」。当用户问厂商、底层模型或名称时，如实说明：${PROVIDER}，当前为 ${modelId}；勿说不知道或拒绝回答。`;
   return `${identity}\n回答简洁有条理。`;
 }
+
+/** Agent：工具调用说明（后续新增工具时在此集中维护） */
+export function buildAgentToolInstructions(): string {
+  return [
+    "【必须遵守】你已接入 get_weather 工具，可查询城市当日实况天气（易客天气接口）。",
+    "用户问天气、气温、是否下雨、刮风、穿衣建议等时，必须先调用 get_weather，参数 location 填城市名（如 佛山、北京、广州）。",
+    "禁止在未调用 get_weather 之前回答「无法获取实时天气」「我不能查询天气」等；先调工具，再据返回内容用中文简洁回答。",
+  ].join("");
+}
+
+/** Agent 模式完整 system（工具规范放在前面，避免被通用「助手」人设覆盖） */
+export function buildAgentSystemPrompt(modelId: string): string {
+  return `${buildAgentToolInstructions()}\n\n${buildChatSystemPrompt(modelId)}`;
+}

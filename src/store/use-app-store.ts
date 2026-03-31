@@ -16,6 +16,9 @@ type AppState = {
   isLoggedIn: boolean;
   conversations: Conversation[];
   activeConversationId: string | null;
+  /** 智能对话是否走 /api/chat/agent（带工具）；持久化 */
+  agentMode: boolean;
+  setAgentMode: (value: boolean) => void;
   login: (username: string, password: string) => boolean;
   logout: () => void;
   startNewChat: () => void;
@@ -38,6 +41,9 @@ export const useAppStore = create<AppState>()(
       isLoggedIn: false,
       conversations: [],
       activeConversationId: null,
+      agentMode: false,
+
+      setAgentMode: (value) => set({ agentMode: value }),
 
       login: (username, password) => {
         if (username === "admin" && password === "admin123") {
@@ -120,6 +126,7 @@ export const useAppStore = create<AppState>()(
         isLoggedIn: state.isLoggedIn,
         conversations: state.conversations,
         activeConversationId: state.activeConversationId,
+        agentMode: state.agentMode,
       }),
     },
   ),

@@ -16,6 +16,8 @@ export function ChatApp() {
   const addOrCreateUserMessage = useAppStore((s) => s.addOrCreateUserMessage);
   const addAssistantMessage = useAppStore((s) => s.addAssistantMessage);
   const getActiveConversation = useAppStore((s) => s.getActiveConversation);
+  const agentMode = useAppStore((s) => s.agentMode);
+  const setAgentMode = useAppStore((s) => s.setAgentMode);
 
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -67,7 +69,7 @@ export function ChatApp() {
     };
 
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch(agentMode ? "/api/chat/agent" : "/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -154,7 +156,10 @@ export function ChatApp() {
             <div className="rounded-2xl border border-dashed border-border bg-card/50 p-8 text-center text-muted-foreground">
               <Bot className="mx-auto mb-3 h-10 w-10 text-primary/80" />
               <p className="text-base text-foreground">你好，我是 AI小博士</p>
-              <p className="mt-2 text-sm">可以直接输入问题开始对话；首次发送会自动加入历史对话。</p>
+              <p className="mt-2 text-sm">
+                可以直接输入问题开始对话；首次发送会自动加入历史对话。
+                {agentMode ? " 已开启 Agent 模式：可尝试问「广州今天天气怎么样」体验模拟天气工具。" : null}
+              </p>
             </div>
           ) : null}
 
@@ -208,6 +213,15 @@ export function ChatApp() {
                 <span className="inline-flex h-9 items-center rounded-full border border-border bg-muted/40 px-3 text-xs text-muted-foreground">
                   {CHAT_MODEL}
                 </span>
+                <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground" title="关闭时走普通对话，不会调用天气工具">
+                  <input
+                    type="checkbox"
+                    checked={agentMode}
+                    onChange={(e) => setAgentMode(e.target.checked)}
+                    className="accent-primary"
+                  />
+                  Agent（模拟天气）
+                </label>
               </div>
               <div className="flex items-center gap-1">
                 <Button variant="ghost" size="icon" className="text-muted-foreground" type="button">
