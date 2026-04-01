@@ -55,10 +55,10 @@ export function ChatApp() {
     const clientTimeoutMs = 185_000;
     const timeoutId = window.setTimeout(() => abort.abort(), clientTimeoutMs);
 
-    const parseLine = (line: string) => {
-      let o: { t?: string; done?: boolean; error?: string };
+    const parseSseData = (s: string) => {
+      let o: { t?: string; done?: boolean; error?: string; ok?: boolean };
       try {
-        o = JSON.parse(line) as { t?: string; done?: boolean; error?: string };
+        o = JSON.parse(s) as { t?: string; done?: boolean; error?: string; ok?: boolean };
       } catch {
         throw new Error("响应解析失败，请重试");
       }
@@ -89,34 +89,50 @@ export function ChatApp() {
       let buffer = "";
       let full = "";
 
-      const flushLines = () => {
-        let nl: number;
-        while ((nl = buffer.indexOf("\n")) !== -1) {
-          const raw = buffer.slice(0, nl).trim();
-          buffer = buffer.slice(nl + 1);
-          if (!raw) continue;
-          const o = parseLine(raw);
+      const flushEvents = () => {
+        let sep: number;
+        while ((sep = buffer.indexOf("\n\n")) !== -1) {
+          const rawEvt = buffer.slice(0, sep);
+          buffer = buffer.slice(sep + 2);
+
+          const lines = rawEvt.split("\n");
+          let eventName = "message";
+          const dataParts: string[] = [];
+          for (const line of lines) {
+            if (!line) continue;
+            if (line.startsWith(":")) continue; // comment/keep-alive
+            if (line.startsWith("event:")) {
+              eventName = line.slice("event:".length).trim() || "message";
+            } else if (line.startsWith("data:")) {
+              dataParts.push(line.slice("data:".length).trimStart());
+            }
+          }
+
+          const dataRaw = dataParts.join("\n").trim();
+          if (!dataRaw) continue;
+          const o = parseSseData(dataRaw);
+
           if (o.t) {
             full += o.t;
             setStreamingReply(full);
           }
+          if (eventName === "done" || o.done) return true;
         }
+        return false;
       };
 
       while (true) {
         const { done, value } = await reader.read();
         if (value) buffer += dec.decode(value, { stream: true });
-        flushLines();
+        const shouldStop = flushEvents();
+        if (shouldStop) break;
         if (done) break;
       }
 
-      const tail = buffer.trim();
-      if (tail) {
-        const o = parseLine(tail);
-        if (o.t) {
-          full += o.t;
-          setStreamingReply(full);
-        }
+      // 容错：没有以 \n\n 结尾的最后一帧
+      if (buffer.trim()) {
+        buffer += "\n\n";
+        flushEvents();
       }
 
       if (full.trim()) {

@@ -11,11 +11,12 @@ export async function POST(req: Request) {
     method: "POST",
     headers: {
       "Content-Type": req.headers.get("content-type") ?? "application/json",
+      Accept: "text/event-stream",
     },
     body,
   });
 
-  // 直接透传响应流（前端按 NDJSON 逐行解析）
+  // 直接透传 SSE 响应流
   const headers = new Headers(upstream.headers);
   return new NextResponse(upstream.body, { status: upstream.status, headers });
 }

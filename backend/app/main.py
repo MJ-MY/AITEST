@@ -56,6 +56,21 @@ def ndjson_headers() -> dict[str, str]:
     }
 
 
+def sse_headers() -> dict[str, str]:
+    return {
+        "Content-Type": "text/event-stream; charset=utf-8",
+        "Cache-Control": "no-cache, no-transform",
+        "Connection": "keep-alive",
+        # Nginx 等反代下避免缓冲
+        "X-Accel-Buffering": "no",
+    }
+
+
+def _sse(event: str, data: Any) -> str:
+    payload = json.dumps(data, ensure_ascii=False)
+    return f"event: {event}\ndata: {payload}\n\n"
+
+
 async def response_from_full_text_ndjson(text: str) -> AsyncIterator[str]:
     t = text or ""
     if t:
@@ -163,8 +178,95 @@ async def response_from_qwen_stream_ndjson(messages: list[dict[str, str]], model
             return
 
 
+async def response_from_qwen_stream_sse(messages: list[dict[str, str]], model: str) -> AsyncIterator[str]:
+    """
+    上游 DashScope 流式（stream=True），下游输出 SSE：
+    - event: delta  data: {"t": "..."}
+    - event: error  data: {"error": "..."}
+    - event: done   data: {"done": true}
+    """
+    api_key = (settings.DASHSCOPE_API_KEY or "").strip() or None
+    q: asyncio.Queue[tuple[str, str]] = asyncio.Queue()
+
+    def _worker() -> None:
+        try:
+            with _no_proxy_env():
+                stream = dashscope.Generation.call(
+                    api_key=api_key,
+                    model=model,
+                    messages=messages,
+                    enable_thinking=True,  # 深度思考
+                    stream=True,
+                    incremental_output=True,
+                    logprobs=True,  # 对数概率
+                    enable_search=True,  # 联网搜索
+                    result_format="message",
+                )
+                last_text = ""
+                for evt in stream:
+                    piece = _extract_qwen_text_delta(evt)
+                    if not piece:
+                        continue
+                    if piece.startswith(last_text):
+                        delta = piece[len(last_text) :]
+                        last_text = piece
+                    else:
+                        delta = piece
+                        last_text = last_text + piece
+                    if delta:
+                        q.put_nowait(("t", delta))
+        except Exception as e:  # noqa: BLE001
+            q.put_nowait(("error", str(e)))
+        finally:
+            q.put_nowait(("done", "1"))
+
+    Thread(target=_worker, daemon=True).start()
+
+    # 先发一个 open 事件，方便前端确认连接建立
+    yield _sse("open", {"ok": True})
+
+    while True:
+        kind, payload = await q.get()
+        if kind == "t":
+            yield _sse("delta", {"t": payload})
+        elif kind == "error":
+            yield _sse("error", {"error": payload})
+        elif kind == "done":
+            yield _sse("done", {"done": True})
+            return
+
 @app.post("/v1/chat")
 async def chat_v1(body: ChatRequest):
+    if not body.messages:
+        raise HTTPException(status_code=400, detail="messages 不能为空")
+
+    api_key = (settings.DASHSCOPE_API_KEY or "").strip()
+    if not api_key:
+        async def gen_missing_key() -> AsyncIterator[str]:
+            yield _sse("error", {"error": "未配置 DASHSCOPE_API_KEY，请在 .env.local 中设置。"})
+            yield _sse("done", {"done": True})
+
+        return StreamingResponse(gen_missing_key(), headers=sse_headers())
+
+    model = (body.model or "qwen-plus").strip() or "qwen-plus"
+    messages = [{"role": m.role, "content": m.content} for m in body.messages]
+
+    async def gen() -> AsyncIterator[str]:
+        try:
+            async for chunk in response_from_qwen_stream_sse(messages, model=model):
+                yield chunk
+        except Exception as e:  # noqa: BLE001
+            yield _sse("error", {"error": str(e)})
+            yield _sse("done", {"done": True})
+
+    return StreamingResponse(gen(), headers=sse_headers())
+
+
+@app.post("/v1/chat_ndjson")
+async def chat_v1_ndjson(body: ChatRequest):
+    """
+    兼容旧前端：返回 NDJSON（逐行 JSON）。
+    """
     if not body.messages:
         raise HTTPException(status_code=400, detail="messages 不能为空")
 
